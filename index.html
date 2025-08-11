@@ -262,6 +262,39 @@ function generateSection() {
       });
       ctx.drawImage(qrCanvas, c.qr.x, c.qr.y, c.qr.size, c.qr.size);
     }
+    // Only for claim check: create "split & stack" image
+    if (section === "claim") {
+      // Create an offscreen canvas with same dimensions
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+
+      // Calculate half height
+      const halfH = Math.floor(canvas.height / 2);
+
+      // Create output canvas that stacks the halves vertically
+      const outCanvas = document.createElement('canvas');
+      const outCtx = outCanvas.getContext('2d');
+      outCanvas.width = canvas.width;
+      outCanvas.height = canvas.height; // two halves = full height again
+  
+      // First half (top)
+      const topHalf = ctx.getImageData(0, 0, canvas.width, halfH);
+      outCtx.putImageData(topHalf, 0, 0);
+
+      // Second half (bottom) placed immediately after the first
+      const bottomHalf = ctx.getImageData(0, halfH, canvas.width, halfH);
+      outCtx.putImageData(bottomHalf, 0, halfH);
+
+      // Optionally append to document for preview:
+      const splitImg = document.createElement('img');
+      splitImg.src = outCanvas.toDataURL();
+      splitImg.style.marginTop = '12px';
+      splitImg.style.maxWidth = '100%';
+      document.querySelector('.canvas-wrap').appendChild(splitImg);
+  }
+
   };
   img.src = c.img;
 }
