@@ -263,41 +263,48 @@ function generateSection() {
       ctx.drawImage(qrCanvas, c.qr.x, c.qr.y, c.qr.size, c.qr.size);
     }
     // Only for claim check: create "split & stack" image
-    if (section === "claim") {
-      // Create an offscreen canvas with same dimensions
-      const tempCanvas = document.createElement('canvas');
-      const tempCtx = tempCanvas.getContext('2d');
-      tempCanvas.width = canvas.width;
-      tempCanvas.height = canvas.height;
+// === Side-by-side halves for Claim Check ===
+if (section === "claim") {
+  const w = canvas.width;
+  const h = canvas.height;
+  const hTop = Math.floor(h / 2);
+  const hBot = h - hTop; // handles odd heights
 
-      // Calculate half height
-      const halfH = Math.floor(canvas.height / 2);
+  // 2× width canvas to place halves side-by-side
+  const sideCanvas = document.createElement('canvas');
+  const sctx = sideCanvas.getContext('2d');
+  sideCanvas.width = w * 2;
+  sideCanvas.height = Math.max(hTop, hBot);
 
-      // Create output canvas that stacks the halves horizontally
-      const outCanvas = document.createElement('canvas');
-      const outCtx = outCanvas.getContext('2d');
-      outCanvas.width = canvas.width*2;
-      outCanvas.height = canvas.halfH; 
-  
-      // First half (top)
-      const topHalf = ctx.getImageData(0, 0, canvas.width, halfH);
-      outCtx.putImageData(topHalf, 0, 0);
+  // Optional: white background (avoids transparent rows)
+  sctx.fillStyle = "#fff";
+  sctx.fillRect(0, 0, sideCanvas.width, sideCanvas.height);
 
-      // Second half (bottom) placed immediately after the first
-      const bottomHalf = ctx.getImageData(0, halfH, canvas.width, halfH);
-      outCtx.putImageData(bottomHalf, canvas.width, 0);
+  // Left = TOP half
+  sctx.drawImage(canvas, 0, 0,     w, hTop,  0, 0,   w, hTop);
+  // Right = BOTTOM half
+  sctx.drawImage(canvas, 0, hTop,  w, hBot,  w, 0,   w, hBot);
 
-      // Optionally append to document for preview:
-      const splitImg = document.createElement('img');
-      splitImg.src = outCanvas.toDataURL();
-      splitImg.style.marginTop = '12px';
-      splitImg.style.maxWidth = '200%';
-      document.querySelector('.canvas-wrap').appendChild(splitImg);
-  }
+  // Preview under main canvas
+  const wrap = document.querySelector('.canvas-wrap') || document.body;
+  const sideImg = document.createElement('img');
+  sideImg.src = sideCanvas.toDataURL('image/png');
+  sideImg.alt = 'Claim Check (halves side-by-side)';
+  sideImg.style.marginTop = '12px';
+  sideImg.style.maxWidth = '100%';
+  wrap.appendChild(sideImg);
 
-  };
-  img.src = c.img;
+  // Quick download link for the side-by-side image
+  const dl = document.createElement('a');
+  dl.textContent = 'Download side-by-side';
+  dl.style.display = 'inline-block';
+  dl.style.marginTop = '8px';
+  dl.style.fontSize = '12px';
+  dl.href = sideCanvas.toDataURL('image/png');
+  dl.download = 'claim-halves-side-by-side.png';
+  wrap.appendChild(dl);
 }
+
 
 document.getElementById('generate').addEventListener('click', generateSection);
 document.getElementById('download').addEventListener('click', () => {
