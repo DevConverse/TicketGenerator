@@ -195,160 +195,173 @@
     </div>
   </div>
 
-<script>
-/* === DO NOT CHANGE FUNCTIONALITY: original logic kept intact === */
-const coords = {
-  dashboard: {
-    img: "dashboard_clean.png",
-    number:  {x: 327, y: 60, size: 48, color: "black"},
-    barcode: {x: 45,  y: 17, w: 213, h: 70}
-  },
-  ticket: {
-    img: "ticket_clean.png",
-    number:  {x: 325, y: 528, size: 48, color: "black"},
-    barcode: {x: 46,  y: 483, w: 212, h: 70}
-  },
-  claim: {
-    img: "claim_clean.png",
-    number:  {x: 120, y: 74, size: 18, color: "SteelBlue"},   // final, pixel-confirmed
-    qr:      {x: 262, y: 158, size: 171}                 // final, pixel-confirmed
-  },
-  keystub: {
-    img: "keystub_clean.png",
-    number:  {x: 327, y: 135, size: 48, color: "black"},
-    barcode: {x: 42,  y: 89,  w: 213, h: 70}
-  }
-};
-
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-
-// Removes any side-by-side preview image and its download link
-function clearSideBySidePreview() {
-  const wrap = document.querySelector('.canvas-wrap');
-  if (!wrap) return;
-
-  // Remove all <img> and <a> elements that we appended for the preview
-  wrap.querySelectorAll('img[data-side-preview], a[data-side-download]')
-      .forEach(el => el.remove());
-}
-
-let lastSection = null;
-let lastSideCanvas = null;
-  
-function generateSection() {
-  clearSideBySidePreview();
-  const section = document.getElementById('section').value;
-   lastSection = section; // store for download handler
-  const num = document.getElementById('ticketNumber').value;
-  const c = coords[section];
-
-  const img = new Image();
-  img.onload = function() {
-    canvas.width = img.width;
-    canvas.height = img.height;
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.drawImage(img, 0, 0);
-
-    // Number (locked coords)
-    if (c.number) {
-      ctx.font = `${c.number.size}px Impact, sans-serif`;
-      ctx.fillStyle = c.number.color;
-      ctx.textBaseline = 'middle';  // matches earlier placement
-      ctx.fillText(num, c.number.x, c.number.y);
+  <script>
+    /* === DATA === */
+    const coords = {
+      dashboard: {
+        img: "dashboard_clean.png",
+        number:  {x: 327, y: 60, size: 48, color: "black"},
+        barcode: {x: 45,  y: 17, w: 213, h: 70}
+      },
+      ticket: {
+        img: "ticket_clean.png",
+        number:  {x: 325, y: 528, size: 48, color: "black"},
+        barcode: {x: 46,  y: 483, w: 212, h: 70}
+      },
+      claim: {
+        img: "claim_clean.png",
+        number:  {x: 120, y: 74, size: 18, color: "SteelBlue"},
+        qr:      {x: 262, y: 158, size: 171}
+      },
+      keystub: {
+        img: "keystub_clean.png",
+        number:  {x: 327, y: 135, size: 48, color: "black"},
+        barcode: {x: 42,  y: 89,  w: 213, h: 70}
+      }
+    };
+    
+    /* === APP STATE === */
+    const appState = {
+      currentSection: null,
+      sideCanvas: null,
+      renderReady: false
+    };
+    
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    /* === HELPERS === */
+    function clearSideBySidePreview() {
+      const wrap = document.querySelector('.canvas-wrap');
+      if (!wrap) return;
+      wrap.querySelectorAll('img[data-side-preview], a[data-side-download]').forEach(el => el.remove());
     }
-
-    // Barcode (locked coords)
-    if (c.barcode) {
-      const bcCanvas = document.createElement('canvas');
-      JsBarcode(bcCanvas, num, {
-        format: "CODE39",
-        displayValue: false,
-        width: 2,
-        height: c.barcode.h
-      });
-      ctx.drawImage(bcCanvas, c.barcode.x, c.barcode.y, c.barcode.w, c.barcode.h);
+    
+    /* === MAIN === */
+    function generateSection() {
+      clearSideBySidePreview();
+      appState.renderReady = false;
+    
+      const section = document.getElementById('section').value.trim().toLowerCase();
+      appState.currentSection = section;
+      appState.sideCanvas = null;
+    
+      const num = document.getElementById('ticketNumber').value;
+      const c = coords[section];
+    
+      const img = new Image();
+      img.onload = function () {
+        // base
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+    
+        // number
+        if (c.number) {
+          ctx.font = `${c.number.size}px Impact, sans-serif`;
+          ctx.fillStyle = c.number.color;
+          ctx.textBaseline = 'middle';
+          ctx.fillText(num, c.number.x, c.number.y);
+        }
+    
+        // barcode
+        if (c.barcode) {
+          const bcCanvas = document.createElement('canvas');
+          JsBarcode(bcCanvas, num, {
+            format: "CODE39",
+            displayValue: false,
+            width: 2,
+            height: c.barcode.h
+          });
+          ctx.drawImage(bcCanvas, c.barcode.x, c.barcode.y, c.barcode.w, c.barcode.h);
+        }
+    
+        // QR
+        if (c.qr) {
+          const qrCanvas = document.createElement('canvas');
+          new QRious({
+            element: qrCanvas,
+            value: `SMSTO:2076185473:${num}`,
+            size: c.qr.size
+          });
+          ctx.drawImage(qrCanvas, c.qr.x, c.qr.y, c.qr.size, c.qr.size);
+        }
+    
+        // claim: build side-by-side halves
+        if (section === "claim") {
+          const w = canvas.width, h = canvas.height;
+          const hTop = Math.floor(h / 2), hBot = h - hTop;
+    
+          const sideCanvas = document.createElement('canvas');
+          const sctx = sideCanvas.getContext('2d');
+          sideCanvas.width = w * 2;
+          sideCanvas.height = Math.max(hTop, hBot);
+    
+          sctx.fillStyle = "#fff";
+          sctx.fillRect(0, 0, sideCanvas.width, sideCanvas.height);
+    
+          // left = top half, right = bottom half
+          sctx.drawImage(canvas, 0, 0, w, hTop,   0, 0, w, hTop);
+          sctx.drawImage(canvas, 0, hTop, w, hBot, w, 0, w, hBot);
+    
+          // keep reference for download
+          appState.sideCanvas = sideCanvas;
+    
+          // (optional) preview + link — uncomment if you want them visible
+          
+          const wrap = document.querySelector('.canvas-wrap');
+          const sideImg = document.createElement('img');
+          sideImg.src = sideCanvas.toDataURL('image/png');
+          sideImg.style.marginTop = '12px';
+          sideImg.style.maxWidth = '100%';
+          sideImg.setAttribute('data-side-preview', 'true');
+          wrap.appendChild(sideImg);
+    /*          // (optional) download link for side-by-side halves
+          const dl = document.createElement('a');
+          dl.textContent = 'Download side-by-side';
+          dl.style.display = 'inline-block';
+          dl.style.marginTop = '8px';
+          dl.style.fontSize = '12px';
+          dl.href = sideCanvas.toDataURL('image/png');
+          dl.download = 'claim-halves-side-by-side.png';
+          dl.setAttribute('data-side-download', 'true');
+          wrap.appendChild(dl);
+          */
+        }
+    
+        appState.renderReady = true;
+      };
+    
+      img.src = c.img;
     }
+    
+    /* events */
+    document.getElementById('generate').addEventListener('click', generateSection);
+    
+    document.getElementById('download').onclick = () => {
+      if (!appState.renderReady) return;
+    
+      const sec = (appState.currentSection || "").trim().toLowerCase();
+      const isClaim = sec === "claim";
+      const source = (isClaim && appState.sideCanvas) ? appState.sideCanvas : canvas;
+      const filename = (isClaim && appState.sideCanvas)
+        ? "claim-halves-side-by-side.png"
+        : `${sec || document.getElementById('section').value}.png`;
+    
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = source.toDataURL('image/png');
+      link.click();
+    };
+    </script>
 
-    // QR (locked coords; draw from an offscreen canvas to ensure visibility)
-    if (c.qr) {
-      const qrCanvas = document.createElement('canvas');
-      new QRious({
-        element: qrCanvas,
-        value: `SMSTO:2076185473:${num}`,
-        size: c.qr.size
-      });
-      ctx.drawImage(qrCanvas, c.qr.x, c.qr.y, c.qr.size, c.qr.size);
-    }
-    // === Side-by-side halves for Claim Check ===
-if (section === "claim") {
-  const w = canvas.width;
-  const h = canvas.height;
-  const hTop = Math.floor(h / 2);
-  const hBot = h - hTop; // handles odd heights
-
-  // 2× width canvas to place halves side-by-side
-  const sideCanvas = document.createElement('canvas');
-  const sctx = sideCanvas.getContext('2d');
-  sideCanvas.width = w * 2;
-  sideCanvas.height = Math.max(hTop, hBot);
-  lastSideCanvas = sideCanvas;
-  // Optional: white background (avoids transparent rows)
-  sctx.fillStyle = "#fff";
-  sctx.fillRect(0, 0, sideCanvas.width, sideCanvas.height);
-
-  // Left = TOP half
-  sctx.drawImage(canvas, 0, 0,     w, hTop,  0, 0,   w, hTop);
-  // Right = BOTTOM half
-  sctx.drawImage(canvas, 0, hTop,  w, hBot,  w, 0,   w, hBot);
-
-  // Preview under main canvas
-  const wrap = document.querySelector('.canvas-wrap') || document.body;
-  const sideImg = document.createElement('img');
-  sideImg.src = sideCanvas.toDataURL('image/png');
-  sideImg.alt = 'Claim Check (halves side-by-side)';
-  sideImg.style.marginTop = '12px';
-  sideImg.style.maxWidth = '100%';
-  wrap.appendChild(sideImg);
-
-  
-  // Quick download link for the side-by-side image
-  //const dl = document.createElement('a');
- // dl.textContent = 'side-by-side for full-size printing on mini thermal printer';
-  //dl.style.display = 'inline-block';
-  //dl.style.marginTop = '8px';
-  //dl.style.fontSize = '12px';
-  //dl.style.font
-  //dl.href = sideCanvas.toDataURL('image/png');
-  //dl.download = 'claim-halves-side-by-side.png';
-  //wrap.appendChild(dl);
-
-  sideImg.setAttribute('data-side-preview', 'true');
-  //dl.setAttribute('data-side-download', 'true');
-
-} else {
-      lastSideCanvas = null; // no side canvas for other sections
-    }
-
-  };
-  img.src = c.img;
-}
-
-document.getElementById('generate').addEventListener('click', generateSection);
-document.getElementById('download').addEventListener('click', () => {
-  
-  if (section === "claim") {
-    const link = document.createElement('a');
-    link.download = lastSection + "-halves-side-by-side.png";
-    link.href = lastSideCanvas.toDataURL();
-    link.click();
-  } else {
-    const link = document.createElement('a');
-    link.download = lastSection + ".png";
-    link.href = canvas.toDataURL();
-    link.click();
-  }
-});
-</script>
 </body>
 </html>
+<!--
+  This HTML file generates ticket sections with a clean, modern design.
+  It uses the Inter font, Code 39 barcodes, and QR codes for SMS.
+  The layout is responsive and adapts to different screen sizes.
+  The code is structured for easy maintenance and readability.
+  The main functionality is handled by JavaScript, which dynamically updates the canvas based on user input.
+  The design is minimalistic, focusing on usability and clarity.
