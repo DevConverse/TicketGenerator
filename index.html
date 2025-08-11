@@ -220,7 +220,19 @@ const coords = {
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
+// Removes any side-by-side preview image and its download link
+function clearSideBySidePreview() {
+  const wrap = document.querySelector('.canvas-wrap');
+  if (!wrap) return;
+
+  // Remove all <img> and <a> elements that we appended for the preview
+  wrap.querySelectorAll('img[data-side-preview], a[data-side-download]')
+      .forEach(el => el.remove());
+}
+
+
 function generateSection() {
+  clearSideBySidePreview();
   const section = document.getElementById('section').value;
   const num = document.getElementById('ticketNumber').value;
   const c = coords[section];
@@ -302,6 +314,10 @@ if (section === "claim") {
   dl.href = sideCanvas.toDataURL('image/png');
   dl.download = 'claim-halves-side-by-side.png';
   wrap.appendChild(dl);
+
+  sideImg.setAttribute('data-side-preview', 'true');
+  dl.setAttribute('data-side-download', 'true');
+
 }
 
   };
