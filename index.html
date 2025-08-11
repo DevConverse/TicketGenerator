@@ -335,13 +335,13 @@ if (section === "claim") {
   appState.sideCanvas = vertCanvas;
 
   // (Optional) live preview under main canvas:
-  // const wrap = document.querySelector('.canvas-wrap');
-  // const prev = document.createElement('img');
-  // prev.src = vertCanvas.toDataURL('image/png');
-  // prev.style.marginTop = '12px';
-  // prev.style.maxWidth = '100%';
-  // prev.setAttribute('data-side-preview', 'true');
-  // wrap.appendChild(prev);
+   const wrap = document.querySelector('.canvas-wrap');
+   const prev = document.createElement('img');
+   prev.src = vertCanvas.toDataURL('image/png');
+   prev.style.marginTop = '12px';
+   prev.style.maxWidth = '100%';
+   prev.setAttribute('data-side-preview', 'true');
+   wrap.appendChild(prev);
 }
 
     
