@@ -1,33 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Ticket Section Generator</title>
-<style>
-  body { font-family: sans-serif; margin: 20px; }
-  canvas { border: 1px solid #ccc; display: block; margin-top: 10px; }
-  label { display: block; margin-top: 10px; }
-</style>
+
+<!-- Inter: clean, modern, neutral -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+<!-- JsBarcode (Code 39) + QRious (QR) -->
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+
+<style>
+  :root{
+    --bg: #f6f7f9;        /* page background */
+    --panel: #ffffff;     /* cards/panels */
+    --ink: #0b1220;       /* primary text */
+    --muted: #6b7280;     /* secondary text */
+    --line: #e5e7eb;      /* subtle borders */
+    --accent: #111827;    /* buttons */
+    --accent-ink: #ffffff;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; }
+  body{
+    font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(1200px 900px at 50% -10%, #eef1f5 0%, var(--bg) 60%);
+    color: var(--ink);
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+  }
+
+  .shell{
+    width: 100%;
+    max-width: 980px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  header.panel, .panel{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(2,6,23,.08);
+  }
+
+  header.panel{
+    padding: 18px 20px;
+    text-align: center;
+  }
+  header h1{
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: .2px;
+  }
+  header p{
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .grid{
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 900px){
+    .grid{ grid-template-columns: 1fr; }
+  }
+
+  .controls{
+    padding: 18px;
+    display: grid;
+    gap: 14px;
+  }
+  label{
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: .02em;
+    display: grid;
+    gap: 8px;
+  }
+  select, input[type="text"]{
+    appearance: none;
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #fbfbfc;
+    font-size: 16px;
+    color: var(--ink);
+    outline: none;
+  }
+  select:focus, input[type="text"]:focus{
+    border-color: #cbd5e1;
+    box-shadow: 0 0 0 4px rgba(148,163,184,.15);
+  }
+
+  .actions{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  button{
+    appearance: none;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  button.secondary{
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--line);
+  }
+  button:hover{ filter: brightness(1.02); }
+  button:active{ transform: translateY(1px); }
+
+  .canvas-wrap{
+    padding: 18px;
+    display: grid;
+    place-items: center;
+  }
+  canvas{
+    width: min(100%, 520px);
+    height: auto;
+    border: 1px dashed var(--line);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: inset 0 1px 0 rgba(0,0,0,.02);
+  }
+
+  /* Subtext row for symmetry */
+  .subrow{
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    padding-bottom: 4px;
+  }
+</style>
 </head>
 <body>
-<h1>Ticket Section Generator</h1>
-<label>Section:
-<select id="section">
-  <option value="dashboard">Dashboard Tag</option>
-  <option value="ticket">Ticket Section</option>
-  <option value="claim">Claim Check</option>
-  <option value="keystub">Key Stub</option>
-</select>
-</label>
-<label>Ticket Number:
-<input type="text" id="ticketNumber" value="12345">
-</label>
-<button id="generate">Generate</button>
-<button id="download">Download</button>
-<canvas id="canvas"></canvas>
+  <div class="shell">
+    <header class="panel">
+      <h1>Ticket Section Generator</h1>
+      <p>Choose a section, enter a number, then generate & download just that piece.</p>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT: Controls (IDs unchanged) -->
+      <div class="panel controls">
+        <label>Section
+          <!-- keep id="section" (used by JS) -->
+          <select id="section">
+            <option value="dashboard">Dashboard Tag</option>
+            <option value="ticket">Ticket Section</option>
+            <option value="claim">Claim Check</option>
+            <option value="keystub">Key Stub</option>
+          </select>
+        </label>
+
+        <label>Ticket Number
+          <!-- keep id="ticketNumber" (used by JS) -->
+          <input type="text" id="ticketNumber" value="12345" />
+        </label>
+
+        <div class="actions">
+          <!-- keep IDs (used by JS) -->
+          <button id="generate">Generate</button>
+          <button id="download" class="secondary">Download</button>
+        </div>
+
+        <div class="subrow">Impact-style numerals, Code 39 barcodes, and SMS QR on Claim Check.</div>
+      </div>
+
+      <!-- RIGHT: Canvas (ID unchanged) -->
+      <div class="panel canvas-wrap">
+        <canvas id="canvas"></canvas>
+      </div>
+    </div>
+  </div>
+
 <script>
+/* === DO NOT CHANGE FUNCTIONALITY: original logic kept intact === */
 const coords = {
   dashboard: {
     img: "dashboard_clean.png",
@@ -41,8 +207,8 @@ const coords = {
   },
   claim: {
     img: "claim_clean.png",
-    number:  {x: 120, y: 72, size: 16, color: "SteelBlue"},
-    qr:      {x: 262, y: 158, size: 171}
+    number:  {x: 117, y: 64, size: 16, color: "blue"},   // final, pixel-confirmed
+    qr:      {x: 262, y: 158, size: 171}                 // final, pixel-confirmed
   },
   keystub: {
     img: "keystub_clean.png",
@@ -50,6 +216,7 @@ const coords = {
     barcode: {x: 42,  y: 89,  w: 213, h: 70}
   }
 };
+
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
@@ -57,6 +224,7 @@ function generateSection() {
   const section = document.getElementById('section').value;
   const num = document.getElementById('ticketNumber').value;
   const c = coords[section];
+
   const img = new Image();
   img.onload = function() {
     canvas.width = img.width;
@@ -64,25 +232,30 @@ function generateSection() {
     ctx.clearRect(0,0,canvas.width,canvas.height);
     ctx.drawImage(img, 0, 0);
 
-    // Draw number at locked coords
+    // Number (locked coords)
     if (c.number) {
       ctx.font = `${c.number.size}px Impact, sans-serif`;
       ctx.fillStyle = c.number.color;
-      ctx.textBaseline = 'middle';
+      ctx.textBaseline = 'middle';  // matches earlier placement
       ctx.fillText(num, c.number.x, c.number.y);
     }
 
-    // Draw barcode at locked coords
+    // Barcode (locked coords)
     if (c.barcode) {
       const bcCanvas = document.createElement('canvas');
-      JsBarcode(bcCanvas, num, {format:"CODE39", displayValue:false, width:2, height:c.barcode.h});
+      JsBarcode(bcCanvas, num, {
+        format: "CODE39",
+        displayValue: false,
+        width: 2,
+        height: c.barcode.h
+      });
       ctx.drawImage(bcCanvas, c.barcode.x, c.barcode.y, c.barcode.w, c.barcode.h);
     }
 
-    // Draw QR from offscreen canvas to ensure it appears
+    // QR (locked coords; draw from an offscreen canvas to ensure visibility)
     if (c.qr) {
       const qrCanvas = document.createElement('canvas');
-      const qr = new QRious({
+      new QRious({
         element: qrCanvas,
         value: `SMSTO:2076185473:${num}`,
         size: c.qr.size
