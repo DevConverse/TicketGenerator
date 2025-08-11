@@ -262,6 +262,48 @@ function generateSection() {
       });
       ctx.drawImage(qrCanvas, c.qr.x, c.qr.y, c.qr.size, c.qr.size);
     }
+    // === Side-by-side halves for Claim Check ===
+if (section === "claim") {
+  const w = canvas.width;
+  const h = canvas.height;
+  const hTop = Math.floor(h / 2);
+  const hBot = h - hTop; // handles odd heights
+
+  // 2× width canvas to place halves side-by-side
+  const sideCanvas = document.createElement('canvas');
+  const sctx = sideCanvas.getContext('2d');
+  sideCanvas.width = w * 2;
+  sideCanvas.height = Math.max(hTop, hBot);
+
+  // Optional: white background (avoids transparent rows)
+  sctx.fillStyle = "#fff";
+  sctx.fillRect(0, 0, sideCanvas.width, sideCanvas.height);
+
+  // Left = TOP half
+  sctx.drawImage(canvas, 0, 0,     w, hTop,  0, 0,   w, hTop);
+  // Right = BOTTOM half
+  sctx.drawImage(canvas, 0, hTop,  w, hBot,  w, 0,   w, hBot);
+
+  // Preview under main canvas
+  const wrap = document.querySelector('.canvas-wrap') || document.body;
+  const sideImg = document.createElement('img');
+  sideImg.src = sideCanvas.toDataURL('image/png');
+  sideImg.alt = 'Claim Check (halves side-by-side)';
+  sideImg.style.marginTop = '12px';
+  sideImg.style.maxWidth = '100%';
+  wrap.appendChild(sideImg);
+
+  // Quick download link for the side-by-side image
+  const dl = document.createElement('a');
+  dl.textContent = 'Download side-by-side';
+  dl.style.display = 'inline-block';
+  dl.style.marginTop = '8px';
+  dl.style.fontSize = '12px';
+  dl.href = sideCanvas.toDataURL('image/png');
+  dl.download = 'claim-halves-side-by-side.png';
+  wrap.appendChild(dl);
+}
+
   };
   img.src = c.img;
 }
