@@ -292,7 +292,7 @@ if (section === "claim") {
   const sctx = sideCanvas.getContext('2d');
   sideCanvas.width = w * 2;
   sideCanvas.height = Math.max(hTop, hBot);
-
+  lastSideCanvas = sideCanvas;
   // Optional: white background (avoids transparent rows)
   sctx.fillStyle = "#fff";
   sctx.fillRect(0, 0, sideCanvas.width, sideCanvas.height);
@@ -311,7 +311,7 @@ if (section === "claim") {
   sideImg.style.maxWidth = '100%';
   wrap.appendChild(sideImg);
 
-  lastSideCanvas = sideCanvas;
+  
   // Quick download link for the side-by-side image
   //const dl = document.createElement('a');
  // dl.textContent = 'side-by-side for full-size printing on mini thermal printer';
@@ -337,7 +337,7 @@ if (section === "claim") {
 document.getElementById('generate').addEventListener('click', generateSection);
 document.getElementById('download').addEventListener('click', () => {
   
-  if (section === "claim"&& lastSideCanvas) {
+  if (section === "claim") {
     const link = document.createElement('a');
     link.download = lastSection + "-halves-side-by-side.png";
     link.href = lastSideCanvas.toDataURL();
