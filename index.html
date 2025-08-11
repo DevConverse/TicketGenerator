@@ -309,18 +309,18 @@ if (section === "claim") {
   wrap.appendChild(sideImg);
 
   // Quick download link for the side-by-side image
-  const dl = document.createElement('a');
-  dl.textContent = 'side-by-side for full-size printing on mini thermal printer';
-  dl.style.display = 'inline-block';
-  dl.style.marginTop = '8px';
-  dl.style.fontSize = '12px';
-  dl.style.font
-  dl.href = sideCanvas.toDataURL('image/png');
-  dl.download = 'claim-halves-side-by-side.png';
-  wrap.appendChild(dl);
+  //const dl = document.createElement('a');
+ // dl.textContent = 'side-by-side for full-size printing on mini thermal printer';
+  //dl.style.display = 'inline-block';
+  //dl.style.marginTop = '8px';
+  //dl.style.fontSize = '12px';
+  //dl.style.font
+  //dl.href = sideCanvas.toDataURL('image/png');
+  //dl.download = 'claim-halves-side-by-side.png';
+  //wrap.appendChild(dl);
 
   sideImg.setAttribute('data-side-preview', 'true');
-  dl.setAttribute('data-side-download', 'true');
+  //dl.setAttribute('data-side-download', 'true');
 
 }
 
@@ -334,6 +334,11 @@ document.getElementById('download').addEventListener('click', () => {
   link.download = document.getElementById('section').value + ".png";
   link.href = canvas.toDataURL();
   link.click();
+  if (section === "claim") {
+    link.download = document.getElementById('section'+"-halves-side-by-side).value + ".png";
+    link.href = sideCanvas.toDataURL();
+    link.click();
+  }
 });
 </script>
 </body>
