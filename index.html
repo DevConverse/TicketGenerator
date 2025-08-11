@@ -276,8 +276,8 @@ function generateSection() {
       // Create output canvas that stacks the halves vertically
       const outCanvas = document.createElement('canvas');
       const outCtx = outCanvas.getContext('2d');
-      outCanvas.width = canvas.width;
-      outCanvas.height = canvas.height; // two halves = full height again
+      outCanvas.width = canvas.width*2;
+      outCanvas.height = canvas.halfH; // two halves = full height again
   
       // First half (top)
       const topHalf = ctx.getImageData(0, 0, canvas.width, halfH);
@@ -285,7 +285,7 @@ function generateSection() {
 
       // Second half (bottom) placed immediately after the first
       const bottomHalf = ctx.getImageData(0, halfH, canvas.width, halfH);
-      outCtx.putImageData(bottomHalf, 0, halfH);
+      outCtx.putImageData(bottomHalf, canvas.width, 0);
 
       // Optionally append to document for preview:
       const splitImg = document.createElement('img');
