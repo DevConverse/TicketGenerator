@@ -335,7 +335,7 @@ document.getElementById('download').addEventListener('click', () => {
   link.href = canvas.toDataURL();
   link.click();
   if (section === "claim") {
-    link.download = document.getElementById('section'+"-halves-side-by-side).value + ".png";
+    link.download = document.getElementById('section'+"-halves-side-by-side").value + ".png";
     link.href = sideCanvas.toDataURL();
     link.click();
   }
