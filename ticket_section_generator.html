@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ticket Section Generator</title>
+<style>
+  body { font-family: sans-serif; margin: 20px; }
+  canvas { border: 1px solid #ccc; display: block; margin-top: 10px; }
+  label { display: block; margin-top: 10px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+</head>
+<body>
+<h1>Ticket Section Generator</h1>
+<label>Section:
+<select id="section">
+  <option value="dashboard">Dashboard Tag</option>
+  <option value="ticket">Ticket Section</option>
+  <option value="claim">Claim Check</option>
+  <option value="keystub">Key Stub</option>
+</select>
+</label>
+<label>Ticket Number:
+<input type="text" id="ticketNumber" value="12345">
+</label>
+<button id="generate">Generate</button>
+<button id="download">Download</button>
+<canvas id="canvas"></canvas>
+<script>
+const coords = {
+  dashboard: {
+    img: "dashboard_clean.png",
+    number:  {x: 327, y: 64, size: 48, color: "black"},
+    barcode: {x: 45,  y: 17, w: 213, h: 70}
+  },
+  ticket: {
+    img: "ticket_clean.png",
+    number:  {x: 325, y: 533, size: 48, color: "black"},
+    barcode: {x: 46,  y: 483, w: 212, h: 70}
+  },
+  claim: {
+    img: "claim_clean.png",
+    number:  {x: 120, y: 72, size: 16, color: "SteelBlue"},
+    qr:      {x: 262, y: 158, size: 171}
+  },
+  keystub: {
+    img: "keystub_clean.png",
+    number:  {x: 327, y: 142, size: 48, color: "black"},
+    barcode: {x: 42,  y: 89,  w: 213, h: 70}
+  }
+};
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+function generateSection() {
+  const section = document.getElementById('section').value;
+  const num = document.getElementById('ticketNumber').value;
+  const c = coords[section];
+  const img = new Image();
+  img.onload = function() {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img, 0, 0);
+
+    // Draw number at locked coords
+    if (c.number) {
+      ctx.font = `${c.number.size}px Impact, sans-serif`;
+      ctx.fillStyle = c.number.color;
+      ctx.textBaseline = 'middle';
+      ctx.fillText(num, c.number.x, c.number.y);
+    }
+
+    // Draw barcode at locked coords
+    if (c.barcode) {
+      const bcCanvas = document.createElement('canvas');
+      JsBarcode(bcCanvas, num, {format:"CODE39", displayValue:false, width:2, height:c.barcode.h});
+      ctx.drawImage(bcCanvas, c.barcode.x, c.barcode.y, c.barcode.w, c.barcode.h);
+    }
+
+    // Draw QR from offscreen canvas to ensure it appears
+    if (c.qr) {
+      const qrCanvas = document.createElement('canvas');
+      const qr = new QRious({
+        element: qrCanvas,
+        value: `SMSTO:2076185473:${num}`,
+        size: c.qr.size
+      });
+      ctx.drawImage(qrCanvas, c.qr.x, c.qr.y, c.qr.size, c.qr.size);
+    }
+  };
+  img.src = c.img;
+}
+
+document.getElementById('generate').addEventListener('click', generateSection);
+document.getElementById('download').addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = document.getElementById('section').value + ".png";
+  link.href = canvas.toDataURL();
+  link.click();
+});
+</script>
+</body>
+</html>
