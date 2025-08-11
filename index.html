@@ -233,10 +233,13 @@ function clearSideBySidePreview() {
       .forEach(el => el.remove());
 }
 
-
+let lastSection = null;
+let lastSideCanvas = null;
+  
 function generateSection() {
   clearSideBySidePreview();
   const section = document.getElementById('section').value;
+   lastSection = section; // store for download handler
   const num = document.getElementById('ticketNumber').value;
   const c = coords[section];
 
@@ -308,6 +311,7 @@ if (section === "claim") {
   sideImg.style.maxWidth = '100%';
   wrap.appendChild(sideImg);
 
+  lastSideCanvas = sideCanvas;
   // Quick download link for the side-by-side image
   //const dl = document.createElement('a');
  // dl.textContent = 'side-by-side for full-size printing on mini thermal printer';
@@ -322,7 +326,9 @@ if (section === "claim") {
   sideImg.setAttribute('data-side-preview', 'true');
   //dl.setAttribute('data-side-download', 'true');
 
-}
+} else {
+      lastSideCanvas = null; // no side canvas for other sections
+    }
 
   };
   img.src = c.img;
@@ -331,17 +337,16 @@ if (section === "claim") {
 document.getElementById('generate').addEventListener('click', generateSection);
 document.getElementById('download').addEventListener('click', () => {
   
-  if (section === "claim") {
+  if (section === "claim"&& lastSideCanvas) {
     const link = document.createElement('a');
-    link.download = document.getElementById('section').value + "-halves-side-by-side" + ".png";
-    link.href = sideCanvas.toDataURL();
+    link.download = lastSection + "-halves-side-by-side.png";
+    link.href = lastSideCanvas.toDataURL();
     link.click();
-    }
-  else {
-  const link = document.createElement('a');
-  link.download = document.getElementById('section').value + ".png";
-  link.href = canvas.toDataURL();
-  link.click();
+  } else {
+    const link = document.createElement('a');
+    link.download = lastSection + ".png";
+    link.href = canvas.toDataURL();
+    link.click();
   }
 });
 </script>
