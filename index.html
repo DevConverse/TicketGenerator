@@ -288,47 +288,62 @@
           ctx.drawImage(qrCanvas, c.qr.x, c.qr.y, c.qr.size, c.qr.size);
         }
     
-        // claim: build side-by-side halves
-        if (section === "claim") {
-          const w = canvas.width, h = canvas.height;
-          const hTop = Math.floor(h / 2), hBot = h - hTop;
-    
-          const sideCanvas = document.createElement('canvas');
-          const sctx = sideCanvas.getContext('2d');
-          sideCanvas.width = w * 2;
-          sideCanvas.height = Math.max(hTop, hBot);
-    
-          sctx.fillStyle = "#fff";
-          sctx.fillRect(0, 0, sideCanvas.width, sideCanvas.height);
-    
-          // left = top half, right = bottom half
-          sctx.drawImage(canvas, 0, 0, w, hTop,   0, 0, w, hTop);
-          sctx.drawImage(canvas, 0, hTop, w, hBot, w, 0, w, hBot);
-    
-          // keep reference for download
-          appState.sideCanvas = sideCanvas;
-    
-          // (optional) preview + link — uncomment if you want them visible
-          
-          const wrap = document.querySelector('.canvas-wrap');
-          const sideImg = document.createElement('img');
-          sideImg.src = sideCanvas.toDataURL('image/png');
-          sideImg.style.marginTop = '12px';
-          sideImg.style.maxWidth = '100%';
-          sideImg.setAttribute('data-side-preview', 'true');
-          wrap.appendChild(sideImg);
-    /*          // (optional) download link for side-by-side halves
-          const dl = document.createElement('a');
-          dl.textContent = 'Download side-by-side';
-          dl.style.display = 'inline-block';
-          dl.style.marginTop = '8px';
-          dl.style.fontSize = '12px';
-          dl.href = sideCanvas.toDataURL('image/png');
-          dl.download = 'claim-halves-side-by-side.png';
-          dl.setAttribute('data-side-download', 'true');
-          wrap.appendChild(dl);
-          */
-        }
+        // Build stacked image from a VERTICAL split (right half on top, left half below)
+if (section === "claim") {
+  const w = canvas.width, h = canvas.height;
+  const wLeft  = Math.floor(w / 2);
+  const wRight = w - wLeft; // handles odd widths cleanly
+
+  // Output canvas: same “page” width = max(half widths); height = h * 2 (stacked)
+  const outW = Math.max(wLeft, wRight);
+  const outH = h * 2;
+
+  const vertCanvas = document.createElement('canvas');
+  const vctx = vertCanvas.getContext('2d');
+  vertCanvas.width  = outW;
+  vertCanvas.height = outH;
+
+  // Optional white background (avoid transparency)
+  vctx.fillStyle = "#fff";
+  vctx.fillRect(0, 0, outW, outH);
+
+  // Center each half horizontally if widths differ by 1px
+  const dxRight = Math.floor((outW - wRight) / 2);
+  const dxLeft  = Math.floor((outW - wLeft)  / 2);
+
+  // drawImage(srcCanvas, sx, sy, sw, sh, dx, dy, dw, dh)
+
+  // TOP: RIGHT half (this is the “bottom→top” order)
+  vctx.drawImage(
+    canvas,
+    wLeft, 0,            // sx, sy (start at the vertical midpoint)
+    wRight, h,           // sw, sh (entire right half)
+    dxRight, 0,          // dx, dy (top of output)
+    wRight, h            // dw, dh (no scaling)
+  );
+
+  // BOTTOM: LEFT half
+  vctx.drawImage(
+    canvas,
+    0, 0,                // sx, sy (left half start)
+    wLeft, h,            // sw, sh
+    dxLeft, h,           // dx, dy (stacked below the top half)
+    wLeft, h             // dw, dh
+  );
+
+  // Keep for download handler
+  appState.sideCanvas = vertCanvas;
+
+  // (Optional) live preview under main canvas:
+  // const wrap = document.querySelector('.canvas-wrap');
+  // const prev = document.createElement('img');
+  // prev.src = vertCanvas.toDataURL('image/png');
+  // prev.style.marginTop = '12px';
+  // prev.style.maxWidth = '100%';
+  // prev.setAttribute('data-side-preview', 'true');
+  // wrap.appendChild(prev);
+}
+
     
         appState.renderReady = true;
       };
