@@ -273,11 +273,11 @@ function generateSection() {
       // Calculate half height
       const halfH = Math.floor(canvas.height / 2);
 
-      // Create output canvas that stacks the halves vertically
+      // Create output canvas that stacks the halves horizontally
       const outCanvas = document.createElement('canvas');
       const outCtx = outCanvas.getContext('2d');
       outCanvas.width = canvas.width*2;
-      outCanvas.height = canvas.halfH; // two halves = full height again
+      outCanvas.height = canvas.halfH; 
   
       // First half (top)
       const topHalf = ctx.getImageData(0, 0, canvas.width, halfH);
@@ -291,7 +291,7 @@ function generateSection() {
       const splitImg = document.createElement('img');
       splitImg.src = outCanvas.toDataURL();
       splitImg.style.marginTop = '12px';
-      splitImg.style.maxWidth = '100%';
+      splitImg.style.maxWidth = '200%';
       document.querySelector('.canvas-wrap').appendChild(splitImg);
   }
 
