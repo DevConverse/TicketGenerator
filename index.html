@@ -330,16 +330,18 @@ if (section === "claim") {
 
 document.getElementById('generate').addEventListener('click', generateSection);
 document.getElementById('download').addEventListener('click', () => {
+  
+  if (section === "claim") {
+    const link = document.createElement('a');
+    link.download = document.getElementById('section').value + "-halves-side-by-side" + ".png";
+    link.href = sideCanvas.toDataURL();
+    link.click();
+    }
+  else {
   const link = document.createElement('a');
   link.download = document.getElementById('section').value + ".png";
   link.href = canvas.toDataURL();
   link.click();
-  if (section === "claim") {
-    const link = document.createElement('b');
-    link.download = document.getElementById('section').value + "-halves-side-by-side" + ".png";
-    link.href = sideCanvas.toDataURL();
-    link.click();
-  }
 });
 </script>
 </body>
